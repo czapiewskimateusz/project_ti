@@ -6,6 +6,7 @@ import javax.servlet.annotation.WebServlet;
 
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.server.ExternalResource;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
@@ -16,6 +17,7 @@ import com.vaadin.ui.ColorPicker;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Image;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.StyleGenerator;
 import com.vaadin.ui.TextField;
@@ -40,53 +42,54 @@ public class HomeUI extends UI {
 
 	private UserForm userForm = new UserForm(this);
 	private LoginForm loginForm = new LoginForm(this);
+	Image image = new Image();
+
 	Upload upload;
 	HorizontalLayout toolbar;
 	private VerticalLayout layout;
-	
+
 	ColorPicker colorpicker = new ColorPicker("Wybierz kolor");
 
 	@Override
 	protected void init(VaadinRequest vaadinRequest) {
 
 		layout = new VerticalLayout();
-		
+
 		UploadReceiver receiver = new UploadReceiver();
-		
+
 		upload = new Upload("Wyślij plik", receiver);
 		upload.setImmediateMode(false);
 		upload.setButtonCaption("Wyślij");
-		
+
 		upload.addStartedListener(new Upload.StartedListener() {
-			
+
 			@Override
 			public void uploadStarted(StartedEvent event) {
-				if (event.getContentLength() > 20000000){
+				if (event.getContentLength() > 20000000) {
 					upload.interruptUpload();
 				}
-				
+
 			}
 		});
-		
+
 		upload.addSucceededListener(new Upload.SucceededListener() {
-			
+
 			@Override
 			public void uploadSucceeded(SucceededEvent event) {
 				upload.setVisible(false);
-				Notification.show("Sukces", "Wysyłanie pliku zakończone powodzeniem", Notification.Type.TRAY_NOTIFICATION);
+				Notification.show("Sukces", "Wysyłanie pliku zakończone powodzeniem",
+						Notification.Type.TRAY_NOTIFICATION);
 			}
 		});
-		
+
 		upload.addFailedListener(new FailedListener() {
-			
+
 			@Override
 			public void uploadFailed(FailedEvent event) {
 				Notification.show("Błąd", "Nie udało się wysłać pliku", Notification.Type.ERROR_MESSAGE);
-				
+
 			}
 		});
-	
-		
 
 		tf_filterText.setPlaceholder("szukaj...");
 		tf_filterText.addValueChangeListener(e -> updateList());
@@ -120,15 +123,17 @@ public class HomeUI extends UI {
 			loginForm.email.setValue("");
 			loginForm.password.setValue("");
 		});
-		
+
 		btn_upload.addClickListener(e -> {
-			if(upload.isVisible()==true){
+			if (upload.isVisible() == true) {
 				upload.setVisible(false);
+			} else {
+				upload.setVisible(true);
 			}
-			upload.setVisible(true);
 		});
 
-		toolbar = new HorizontalLayout(tf_userTextField, filtering, btn_addUser, btn_logOut, btn_upload, colorpicker);
+		toolbar = new HorizontalLayout(image, tf_userTextField, filtering, btn_addUser, btn_logOut, btn_upload,
+				colorpicker);
 
 		grid.setColumns("id", "firstName", "lastName", "email");
 
@@ -136,7 +141,7 @@ public class HomeUI extends UI {
 
 		loginForm.setVisible(true);
 		loginForm.login.addClickListener(e -> login());
-		
+
 		upload.setVisible(false);
 		grid.setVisible(false);
 		toolbar.setVisible(false);
@@ -181,12 +186,14 @@ public class HomeUI extends UI {
 				toolbar.setVisible(true);
 				tf_userTextField.setValue("Witaj, " + c.getFirstName());
 				tf_userTextField.setReadOnly(true);
+				image.setSource(new ExternalResource("https://robohash.org/" + c.getEmail()));
+				image.setWidth("100px");
+				image.setHeight("80px");
 				return;
 			}
 		}
 		Notification.show("Błąd", "Błędny login lub hasło", Notification.Type.ERROR_MESSAGE);
 	}
-
 
 	@WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
 	@VaadinServletConfiguration(ui = HomeUI.class, productionMode = false)
